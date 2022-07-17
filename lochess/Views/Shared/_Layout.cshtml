@@ -15,14 +15,16 @@
 </head>
 <body class="body-font font-montserrat">
     <header>
-        <nav class="">
+        <nav class="relative w-full flex flex-wrap items-center justify-center py-4 bg-teal-100 shadow-sm">
+            <div class="container-fluid">
+              <a class="text-xl text-black hover:text-teal-700 focus:text-teal-700" href="@Url.Action("Index", "Home")">Lochess</a>
+            </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+
+    <main role="main" class="pb-3">
+        @RenderBody()
+    </main>
 
     <footer class="border-top footer text-muted">
         <div class="container">
