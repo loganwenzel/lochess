@@ -1,0 +1,14 @@
+﻿@{
+    ViewData["Title"] = "Users Index Page";
+}
+@model List<Users>
+
+<div class="text-center">
+    <h1 class="display-4">Lochess</h1>
+    @{
+        foreach (Users user in Model)
+        {
+            <h5> @user.FirstName - @user.LastName - @user.Email - @user.Password</h5>
+        }
+    }
+</div>
