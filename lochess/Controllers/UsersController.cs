@@ -1,9 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.Data;
-using System.Configuration;
-using MySql.Data.MySqlClient;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Data;using MySql.Data.MySqlClient;
 using lochess.Models;
+using lochess.Classes;
 
 namespace lochess.Controllers
 {
@@ -11,38 +9,32 @@ namespace lochess.Controllers
     {
         // Setting up connection to the context file and appsettings
         // Necessary for each controller
-        private IConfiguration Configuration;
+        private IConfiguration configuration;
         public UsersController(IConfiguration _configuration)
         {
-            Configuration = _configuration;
+            configuration = _configuration;
         }
+
         // GET: UsersController
         public ActionResult Index()
         {
             List<Users> users = new List<Users>();
-            string connString = this.Configuration.GetConnectionString("lochess");
-            using (MySqlConnection con = new MySqlConnection(connString))
+
+            // Query users table for all users
+            string tableConnectionString = configuration.GetConnectionString("UsersTable");
+            string commandString = $"SELECT * FROM {tableConnectionString}";
+            DataRowCollection rows = Utility.SelectMySqlData(tableConnectionString, commandString, configuration);
+
+            foreach (DataRow row in rows)
             {
-                string query = "SELECT first_name, last_name, email, password FROM users";
-                using (MySqlCommand cmd = new MySqlCommand(query))
-                {
-                    cmd.Connection = con;
-                    con.Open();
-                    using (MySqlDataReader sdr = cmd.ExecuteReader())
-                    {
-                        while (sdr.Read())
-                        {
-                            users.Add(new Users
-                            {
-                                FirstName = sdr["first_name"].ToString(),
-                                LastName = sdr["last_name"].ToString(),
-                                Email = sdr["email"].ToString(),
-                                Password = sdr["password"].ToString()
-                            });
-                        }
-                    }
-                    con.Close();
-                }
+                users.Add(new Users() 
+                { 
+                    UserId = int.Parse(row["user_id"].ToString()),
+                    FirstName = row["first_name"].ToString(),
+                    LastName = row["last_name"].ToString(),
+                    Email = row["email"].ToString(),
+                    Password = row["password"].ToString()
+                });
             }
             return View(users);
         }
@@ -59,56 +51,32 @@ namespace lochess.Controllers
             return View();
         }
 
-        public void PostCreate(Users user)
-        {
-            string connString = this.Configuration.GetConnectionString("lochess");
-            using (MySqlConnection con = new MySqlConnection(connString))
-            {
-                string query = "INSERT INTO users (first_name, last_name, email, password)" +
-                              $"VALUES ({user.FirstName}, {user.LastName}, {user.Email}, {user.Password})";
-                //Need to use parameterization for SQL insert from c#
-                //MySqlCommand cmd = new MySqlCommand("Insert into student (Name,Address,Mobile,Email )  
-                //                                        values(@Name, @Address, @Mobile, @Email)", conn);  
-
-                //cmd.Parameters.AddWithValue("@Name", txtName.Text);
-                //                cmd.Parameters.AddWithValue("@Address", txtAddress.Text);
-                //                cmd.Parameters.AddWithValue("@Mobile", txtMobile.Text);
-                //                cmd.Parameters.AddWithValue("@Email", txtEmail.Text);
-                using (MySqlCommand cmd = new MySqlCommand(query))
-                {
-                    cmd.Connection = con;
-                    con.Open();
-                    using (MySqlDataReader sdr = cmd.ExecuteReader())
-                    {
-                        while (sdr.Read())
-                        {
-                            users.Add(new Users
-                            {
-                                FirstName = sdr["first_name"].ToString(),
-                                LastName = sdr["last_name"].ToString(),
-                                Email = sdr["email"].ToString(),
-                                Password = sdr["password"].ToString()
-                            });
-                        }
-                    }
-                    con.Close();
-                }
-            }
-            // TODO: Save to DB
-        }
-
         // POST: UsersController/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public ActionResult Create(Users user)
         {
-            try
+            // Insert Users object into users table using parameterization for security against SQL injections
+            string tableConnectionString = configuration.GetConnectionString("UsersTable");
+            string commandString = $"INSERT INTO {tableConnectionString} (first_name, last_name, email, password) " +
+                                   $"VALUES (@firstName, @lastName, @email, @password);";
+
+            List<MySqlParameter> commParameters = new List<MySqlParameter>();
+            commParameters.Add(new MySqlParameter("@firstName", user.FirstName));
+            commParameters.Add(new MySqlParameter("@lastName", user.LastName));
+            commParameters.Add(new MySqlParameter("@email", user.Email));
+            commParameters.Add(new MySqlParameter("@password", user.Password));
+
+            bool success = Utility.InsertMySqlData(commandString, commParameters, configuration);
+            if (success)
             {
+                // CREATION SUCCESSFUL POPUP ALERT
                 return RedirectToAction(nameof(Index));
             }
-            catch
+            else
             {
-                return View();
+                // CREATION UNSUCCESSFUL POPUP ALERT
+                return View(user);
             }
         }
 

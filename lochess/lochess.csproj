@@ -7,12 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Areas\**" />
     <Compile Remove="Models\NewFolder\**" />
     <Compile Remove="NewFolder1\**" />
+    <Content Remove="Areas\**" />
     <Content Remove="Models\NewFolder\**" />
     <Content Remove="NewFolder1\**" />
+    <EmbeddedResource Remove="Areas\**" />
     <EmbeddedResource Remove="Models\NewFolder\**" />
     <EmbeddedResource Remove="NewFolder1\**" />
+    <None Remove="Areas\**" />
     <None Remove="Models\NewFolder\**" />
     <None Remove="NewFolder1\**" />
   </ItemGroup>
@@ -24,10 +28,6 @@
     <PackageReference Include="MySql.Data" Version="8.0.29" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Areas\" />
-  </ItemGroup>
-
     <ItemGroup>
 	    <UpToDateCheckBuilt Include="wwwroot/css/site.css" Set="Css" />
 	    <UpToDateCheckBuilt Include="postcss.config.js" Set="Css" />
@@ -35,7 +35,7 @@
     </ItemGroup>
 
     <Target Name="Tailwind" BeforeTargets="Build">
-	    <Exec Command="npm run css:build"/>
+	    <Exec Command="npm run css:build" />
     </Target>
 	
 </Project>
