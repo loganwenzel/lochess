@@ -1,28 +1,25 @@
 ﻿@model Users
 
-<div class="text-center">
-    @using (Html.BeginForm("Create", "Users", FormMethod.Post))
-    { 
-        <table>
-            <tr>
-                <td>First Name: </td>
-                <td>@Html.TextBoxFor(m => m.FirstName)</td>
-            </tr>
-            <tr>
-                <td>Last Name: </td>
-                <td>@Html.TextBoxFor(m => m.LastName)</td>
-            </tr>
-            <tr>
-                <td>Email: </td>
-                <td>@Html.TextBoxFor(m => m.Email)</td>
-            </tr>
-            <tr>
-                <td>Password: </td>
-                <td>@Html.TextBoxFor(m => m.Password)</td>
-            </tr>
-            <tr>
-                <td colspan="2"><input type="submit" value="Submit Form" /></td>
-            </tr>
-        </table>
-    }
+<div class="items-center">
+    <form action="/Users/Create" method="post" class="mx-auto border-300 border-teal-200">
+        <div>
+            <td>First Name: </td>
+            <td>@Html.TextBoxFor(m => m.FirstName)</td>
+        </div>
+        <div>
+            <td>Last Name: </td>
+            <td>@Html.TextBoxFor(m => m.LastName)</td>
+        </div>
+        <div>
+            <td>Email: </td>
+            <td>@Html.TextBoxFor(m => m.Email)</td>
+        </div>
+        <div>
+            <td>Password: </td>
+            <td>@Html.TextBoxFor(m => m.Password)</td>
+        </div>
+        <div>
+            <td colspan="2"><input type="submit" value="Submit Form" /></td>
+        </div>
+    </form>
 </div>
