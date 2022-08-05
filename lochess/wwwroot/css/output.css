@@ -1,6 +1,6 @@
-/*! @import */
-
-/*! tailwindcss v3.1.5 | MIT License | https://tailwindcss.com */
+/*
+! tailwindcss v3.1.8 | MIT License | https://tailwindcss.com
+*/
 
 /*
 1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)
@@ -598,10 +598,6 @@ video {
   display: flex;
 }
 
-.table {
-  display: table;
-}
-
 .w-full {
   width: 100%;
 }
@@ -636,6 +632,11 @@ video {
   border-radius: 0.75rem;
 }
 
+.border-teal-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(153 246 228 / var(--tw-border-opacity));
+}
+
 .bg-teal-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(204 251 241 / var(--tw-bg-opacity));
@@ -659,7 +660,7 @@ video {
 }
 
 .font-montserrat {
-  font-family: Montserrat, sans-serif;
+  font-family: Monserrat, sans-serif;
 }
 
 .text-xl {
@@ -711,4 +712,3 @@ video {
   --tw-text-opacity: 1;
   color: rgb(15 118 110 / var(--tw-text-opacity));
 }
-

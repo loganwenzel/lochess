@@ -1,7 +1,7 @@
 ﻿@model Users
 
 <div class="items-center">
-    <form action="/Users/Create" method="post" class="mx-auto border-300 border-teal-200">
+    <form asp-controller="Users" asp-action="Create" method="post" class="mx-auto border-300 border-teal-200">
         <div>
             <td>First Name: </td>
             <td>@Html.TextBoxFor(m => m.FirstName)</td>

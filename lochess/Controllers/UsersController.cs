@@ -70,13 +70,13 @@ namespace lochess.Controllers
             bool success = Utility.InsertMySqlData(commandString, commParameters, configuration);
             if (success)
             {
-                // CREATION SUCCESSFUL POPUP ALERT
+                // TODO: CREATION SUCCESSFUL POPUP ALERT
                 return RedirectToAction(nameof(Index));
             }
             else
             {
-                // CREATION UNSUCCESSFUL POPUP ALERT
-                return View(user);
+                // TODO: CREATION UNSUCCESSFUL POPUP ALERT
+                return RedirectToAction(nameof(Index));
             }
         }
 
