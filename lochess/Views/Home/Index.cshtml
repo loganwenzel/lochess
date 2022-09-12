@@ -1,17 +1,19 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
 }
-<div class="text-center">
-    <h1 class="display-4">Hello world</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 
-    <div class="p-6 max-w-sm bg-teal-100 mx-auto rounded-xl shadow-lg flex items-center space-x-4">
-        <div class="shrink-0">
-            Image
-        </div>
-        <div>
-            <div class="text-xl font-medium text-red-500">ChitChat</div>
-            <p class="text-slate-500 font-bold">You have a new message!</p>
-        </div>
-    </div>
+<div class="text-center">
+    <h1 class="display-4 text-primary">Welcome</h1>
+    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 </div>
+
+<div id="myBoard" style="width: 400px"></div>
+
+@section scripts {
+    <script>
+        var board = Chessboard('myBoard')
+    </script>
+}
+
+
+

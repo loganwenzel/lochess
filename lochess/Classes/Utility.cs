@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using MySql.Data.MySqlClient;
+using MySqlX.XDevAPI.Relational;
 using System.Data;
 
 namespace lochess.Classes
@@ -11,22 +12,31 @@ namespace lochess.Classes
         public static DataRowCollection SelectMySqlData(string tableConnectionString, string commandString, IConfiguration configuration)
         {
             DataRowCollection rows;
-
-            using (MySqlConnection conn = new MySqlConnection(configuration.GetConnectionString("MySqlConnection")))
+            try
             {
-                conn.Open();
+                using (MySqlConnection conn = new MySqlConnection(configuration.GetConnectionString("MySqlConnection")))
+                {
+                    conn.Open();
 
-                MySqlCommand comm = conn.CreateCommand();
-                comm.Connection = conn;
-                comm.CommandText = commandString;
-                MySqlDataAdapter adapter = new MySqlDataAdapter(comm);
-                DataSet dataset = new DataSet();
-                adapter.Fill(dataset, tableConnectionString);
-                rows = dataset.Tables[tableConnectionString].Rows;
+                    MySqlCommand comm = conn.CreateCommand();
+                    comm.Connection = conn;
+                    comm.CommandText = commandString;
+                    MySqlDataAdapter adapter = new MySqlDataAdapter(comm);
+                    DataSet dataset = new DataSet();
+                    adapter.Fill(dataset, tableConnectionString);
+                    rows = dataset.Tables[tableConnectionString].Rows;
 
-                conn.Close();
+                    conn.Close();
+                }
+                return rows;
             }
-            return rows;
+            catch (Exception e)
+            {
+                // TODO: Figure out better way to throw exception to display on the view
+                Console.WriteLine("An error occured: " + e.Message);
+                throw e;
+                return null;
+            }
         }
 
         public static bool InsertMySqlData(string commandString, List<MySqlParameter> commParameters, IConfiguration configuration)
