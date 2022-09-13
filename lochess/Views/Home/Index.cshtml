@@ -6,13 +6,19 @@
     <h1 class="display-4 text-primary">Welcome</h1>
     <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 </div>
-
-<div id="myBoard" style="width: 400px"></div>
+<div class="container">
+    <div class="mx-auto" id="myBoard" style="width: 40%"></div>
+    <label>Status:</label>
+    <div id="status"></div>
+    <label>FEN:</label>
+    <div id="fen"></div>
+    <label>PGN:</label>
+    <div id="pgn"></div>
+</div>
 
 @section scripts {
-    <script>
-        var board = Chessboard('myBoard')
-    </script>
+    <script src="~/chessboardjs/js/chess.js"></script>
+    <script type="text/javascript" src = "~/js/Home/Index.js" ></script>
 }
 
 

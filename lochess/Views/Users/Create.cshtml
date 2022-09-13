@@ -1,25 +1,22 @@
 ﻿@model Users
-
-<div class="items-center">
-    <form asp-controller="Users" asp-action="Create" method="post" class="mx-auto border-300 border-teal-200">
-        <div>
-            <td>First Name: </td>
-            <td>@Html.TextBoxFor(m => m.FirstName)</td>
+<div class="container">
+    <form class="mx-auto" asp-controller="Users" asp-action="Create" method="post">
+        <div class="form-group py-2">
+            @Html.LabelFor(m=>m.FirstName,"First Name")
+            @Html.TextBoxFor(m => m.FirstName, new { @class="form-control" })
         </div>
-        <div>
-            <td>Last Name: </td>
-            <td>@Html.TextBoxFor(m => m.LastName)</td>
+        <div class="form-group py-2">
+            @Html.LabelFor(m=>m.LastName,"Last Name")
+            @Html.TextBoxFor(m => m.LastName, new { @class="form-control" })
         </div>
-        <div>
-            <td>Email: </td>
-            <td>@Html.TextBoxFor(m => m.Email)</td>
+        <div class="form-group py-2">
+            @Html.LabelFor(m=>m.Email,"Email")
+            @Html.TextBoxFor(m => m.Email, new { @class="form-control" })
         </div>
-        <div>
-            <td>Password: </td>
-            <td>@Html.TextBoxFor(m => m.Password)</td>
+        <div class="form-group py-2">
+            @Html.LabelFor(m=>m.Password,"Password")
+            @Html.TextBoxFor(m => m.Password, new { @class="form-control" })
         </div>
-        <div>
-            <td colspan="2"><input type="submit" value="Submit Form" /></td>
-        </div>
+        <button type="submit" class="btn btn-primary my-2">Create User</button>
     </form>
 </div>

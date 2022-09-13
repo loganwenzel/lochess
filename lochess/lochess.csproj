@@ -19,9 +19,55 @@
     <None Remove="Areas\**" />
     <None Remove="Models\NewFolder\**" />
     <None Remove="NewFolder1\**" />
+    <TypeScriptCompile Remove="node_modules\chess.js\**" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Remove="wwwroot\chessboardjs\CHANGELOG.md" />
+    <Content Remove="wwwroot\chessboardjs\css\chessboard-1.0.0.css" />
+    <Content Remove="wwwroot\chessboardjs\css\chessboard-1.0.0.min.css" />
+    <Content Remove="wwwroot\chessboardjs\img\chesspieces\wikipedia\bB.png" />
+    <Content Remove="wwwroot\chessboardjs\img\chesspieces\wikipedia\bK.png" />
+    <Content Remove="wwwroot\chessboardjs\img\chesspieces\wikipedia\bN.png" />
+    <Content Remove="wwwroot\chessboardjs\img\chesspieces\wikipedia\bP.png" />
+    <Content Remove="wwwroot\chessboardjs\img\chesspieces\wikipedia\bQ.png" />
+    <Content Remove="wwwroot\chessboardjs\img\chesspieces\wikipedia\bR.png" />
+    <Content Remove="wwwroot\chessboardjs\img\chesspieces\wikipedia\wB.png" />
+    <Content Remove="wwwroot\chessboardjs\img\chesspieces\wikipedia\wK.png" />
+    <Content Remove="wwwroot\chessboardjs\img\chesspieces\wikipedia\wN.png" />
+    <Content Remove="wwwroot\chessboardjs\img\chesspieces\wikipedia\wP.png" />
+    <Content Remove="wwwroot\chessboardjs\img\chesspieces\wikipedia\wQ.png" />
+    <Content Remove="wwwroot\chessboardjs\img\chesspieces\wikipedia\wR.png" />
+    <Content Remove="wwwroot\chessboardjs\js\chessboard-1.0.0.js" />
+    <Content Remove="wwwroot\chessboardjs\js\chessboard-1.0.0.min.js" />
+    <Content Remove="wwwroot\chessboardjs\LICENSE.md" />
+    <Content Remove="wwwroot\chessboardjs\README.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="node_modules\.package-lock.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\chessboardjs\CHANGELOG.md" />
+    <None Include="wwwroot\chessboardjs\css\chessboard-1.0.0.css" />
+    <None Include="wwwroot\chessboardjs\css\chessboard-1.0.0.min.css" />
+    <None Include="wwwroot\chessboardjs\img\chesspieces\wikipedia\bB.png" />
+    <None Include="wwwroot\chessboardjs\img\chesspieces\wikipedia\bK.png" />
+    <None Include="wwwroot\chessboardjs\img\chesspieces\wikipedia\bN.png" />
+    <None Include="wwwroot\chessboardjs\img\chesspieces\wikipedia\bP.png" />
+    <None Include="wwwroot\chessboardjs\img\chesspieces\wikipedia\bQ.png" />
+    <None Include="wwwroot\chessboardjs\img\chesspieces\wikipedia\bR.png" />
+    <None Include="wwwroot\chessboardjs\img\chesspieces\wikipedia\wB.png" />
+    <None Include="wwwroot\chessboardjs\img\chesspieces\wikipedia\wK.png" />
+    <None Include="wwwroot\chessboardjs\img\chesspieces\wikipedia\wN.png" />
+    <None Include="wwwroot\chessboardjs\img\chesspieces\wikipedia\wP.png" />
+    <None Include="wwwroot\chessboardjs\img\chesspieces\wikipedia\wQ.png" />
+    <None Include="wwwroot\chessboardjs\img\chesspieces\wikipedia\wR.png" />
+    <None Include="wwwroot\chessboardjs\js\chessboard-1.0.0.js" />
+    <None Include="wwwroot\chessboardjs\js\chessboard-1.0.0.min.js" />
+    <None Include="wwwroot\chessboardjs\LICENSE.md" />
+    <None Include="wwwroot\chessboardjs\README.md" />
     <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map" />
     <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css.map" />
     <None Include="wwwroot\lib\bootstrap\dist\css\bootstrap-grid.rtl.css.map" />
@@ -56,7 +102,22 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.6" />
+    <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="4.8.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.6" />
     <PackageReference Include="MySql.Data" Version="8.0.29" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="wwwroot\chessboardjs\package.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="node_modules\%40nodelib\" />
+    <Folder Include="node_modules\.bin\" />
   </ItemGroup>
 </Project>
