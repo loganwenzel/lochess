@@ -23,13 +23,17 @@
 }
 
 .white-1e1d7 {
-  background-color: #f0d9b5;
-  color: #b58863;
+  /*    background-color: #f0d9b5;
+  color: #b58863;*/
+  background-color: #cee9e1; /* 20% lighter than primary */
+  color: #fdf1f2;
 }
 
 .black-3c85d {
-  background-color: #b58863;
-  color: #f0d9b5;
+  /*  background-color: #78c2ad;
+  color: #f0d9b5;*/
+  background-color: #78c2ad; /* primary */
+  color: #cee9e1;
 }
 
 .highlight1-32417, .highlight2-9c5d2 {
