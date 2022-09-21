@@ -1,6 +1,6 @@
-﻿@model Users
+﻿@model User
 <div class="container">
-    <form class="mx-auto" asp-controller="Users" asp-action="Create" method="post">
+    <form class="mx-auto" asp-controller="User" asp-action="Create" method="post">
         <div class="form-group py-2">
             @Html.LabelFor(m=>m.FirstName,"First Name")
             @Html.TextBoxFor(m => m.FirstName, new { @class="form-control" })

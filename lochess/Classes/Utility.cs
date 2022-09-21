@@ -1,6 +1,8 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using lochess.Models;
+using Microsoft.Data.SqlClient;
 using MySql.Data.MySqlClient;
 using MySqlX.XDevAPI.Relational;
+using System.Configuration;
 using System.Data;
 
 namespace lochess.Classes

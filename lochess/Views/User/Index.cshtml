@@ -1,15 +1,15 @@
 ﻿@{
-    ViewData["Title"] = "Users Index Page";
+    ViewData["Title"] = "User Index Page";
 }
-@model List<Users>
+@model List<User>
 
 <div class="text-center">
     <h1 class="display-4">Lochess</h1>
     @{
-        foreach (Users user in Model)
+        foreach (User user in Model)
         {
             <h5> @user.FirstName - @user.LastName - @user.Email - @user.Password</h5>
         }
     }
-    <a class="btn btn-primary my-2" asp-controller="Users" asp-action="Create">Create New User</a>
+    <a class="btn btn-primary my-2" asp-controller="User" asp-action="Create">Create New User</a>
 </div>
