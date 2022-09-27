@@ -1,6 +1,17 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Identity
+
+@inject SignInManager<AspNetUser> SignInManager
+@inject UserManager<AspNetUser> UserManager
+
+@{
     ViewData["Title"] = "Home Page";
 }
+
+<div class="d-flex flex-row">
+    <button class="btn btn-primary btn-lg mx-auto" id="playButton" data-bs-toggle="modal" data-bs-target="#playModal">Play</button>
+    <button class="btn btn-danger btn-lg mx-auto" id="leaveMatchButton" style="display: none;">Leave Game</button>
+</div>
+
 <div class="d-flex flex-row">
     <div class="col-md-8">
         <div class="text-center">
@@ -22,24 +33,43 @@
             <h1 class="display-4 text-primary">Message</h1>
             <p>Message your opponent in real time</p>
         </div>
-        <div class="row">&nbsp;</div>
-        <div class="row">
-            <div class="col-2">User</div>
-            <div class="col-4"><input type="text" id="userInput" /></div>
-        </div>
-        <div class="row">
-            <div class="col-2">Message</div>
-            <div class="col-4"><input type="text" id="messageInput" /></div>
-        </div>
-        <div class="row">&nbsp;</div>
-        <div class="row">
-            <div class="col-6">
-                <input type="button" id="sendButton" value="Send Message" />
+        <div class="row mx-2">
+            <div class="col">
+                <input class="form-control" type="text" id="messageInput" placeholder="Message" />
             </div>
+            <div class="col-md-2 col-sm-4">
+                <input class="btn btn-primary" type="button" id="sendButton" value="Send" />
+            </div>
+        </div>
+        <div class="row">&nbsp;</div>
+        <div class="row">
+
         </div>
         <div class="row">
             <div class="col-6">
                 <ul id="messagesList"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION: Modals-->
+<!-- Modal -->
+<div class="modal fade" id="playModal" tabindex="-1" role="dialog" aria-labelledby="playModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title mx-auto" id="playModalLabel">Play</h5>
+            </div>
+            <div class="modal-body">
+                <div class="form-group py-2">
+                    <h6 class="mx-auto"> Who do you want to play? </h6>
+                    @Html.DropDownList("inviteInput", new SelectList(ViewBag.UserNames), new { @class = "form-select", @id = "inviteInput"})
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary position-left" data-bs-dismiss="modal">Discard</button>
+                <input type="submit" id="submitInvite" class="btn btn-primary" value="Send Invite" data-bs-dismiss="modal"/>
             </div>
         </div>
     </div>
@@ -54,22 +84,22 @@
 
     <!-- page script (TODO: eventually move this to a separate JS file) -->
     <script>
-        /* SECTION: signalr connection for instant messaging */
-
         "use strict";
 
         var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
 
+        /* SECTION: signalr connection for instant messaging */
+
         //Disable the send button until connection is established.
         document.getElementById("sendButton").disabled = true;
 
-        connection.on("ReceiveMessage", function (user, message) {
+        connection.on("ReceiveMessage", function (sender, message) {
             var li = document.createElement("li");
             document.getElementById("messagesList").appendChild(li);
             // We can assign user-supplied strings to an element's textContent because it
             // is not interpreted as markup. If you're assigning in any other way, you
             // should be aware of possible script injection concerns.
-            li.textContent = `${user} says ${message}`;
+            li.textContent = `${sender} says ${message}`;
         });
 
         connection.start().then(function () {
@@ -78,13 +108,50 @@
             return console.error(err.toString());
         });
 
-        document.getElementById("sendButton").addEventListener("click", function (event) {
-            var user = document.getElementById("userInput").value;
-            var message = document.getElementById("messageInput").value;
-            connection.invoke("SendMessage", user, message).catch(function (err) {
+        /* SECTION: signalr connection for creating group */
+
+        // Send Invite Button
+        document.getElementById("submitInvite").addEventListener("click", function (event) {
+            var opponent = document.getElementById("inviteInput").value;
+            connection.invoke("AddToGroup", opponent).catch(function (err) {
                 return console.error(err.toString());
             });
             event.preventDefault();
+        });
+
+        // Send Message Button
+        document.getElementById("sendButton").addEventListener("click", function (event) {
+            var message = document.getElementById("messageInput").value;
+            connection.invoke("SendMessage", message).catch(function (err) {
+                return console.error(err.toString());
+            });
+            event.preventDefault();
+        });
+
+        // Leave Match Button
+        document.getElementById("leaveMatchButton").addEventListener("click", function (event) {
+            connection.invoke("RemoveFromGroup").catch(function (err) {
+                return console.error(err.toString());
+            });
+            event.preventDefault();
+        });
+
+        // Replace 'Play' with 'Leave Match' upon entering a group
+        connection.on("ReceiveInvite", function () {
+            document.getElementById("playButton").disabled = true;
+            document.getElementById("playButton").style.display = "none";
+
+            document.getElementById("leaveMatchButton").disabled = false;
+            document.getElementById("leaveMatchButton").style.display = "block";
+        });
+
+        // Replace 'Leave Match' with 'Play' upon leaving a group
+        connection.on("MatchLeft", function () {
+            document.getElementById("playButton").disabled = false;
+            document.getElementById("playButton").style.display = "block";
+
+            document.getElementById("leaveMatchButton").disabled = true;
+            document.getElementById("leaveMatchButton").style.display = "none";
         });
 
         /* SECTION: signalr connection for chess game communication */

@@ -14,13 +14,6 @@ namespace lochess.Data
         public LochessDbContext(DbContextOptions<LochessDbContext> options) : base(options) 
         {
         }
-        public DbSet<User> Users { get; set; }
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<User>().ToTable("users");
-            base.OnModelCreating(modelBuilder);
-        }
-
     }
 }
 

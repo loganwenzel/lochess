@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using lochess.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace lochess.Areas.Identity.Data;
 
-public class LochessIdentityContext : IdentityDbContext<IdentityUser>
+public class LochessIdentityContext : IdentityDbContext<AspNetUser>
 {
     public LochessIdentityContext(DbContextOptions<LochessIdentityContext> options)
         : base(options)
@@ -17,6 +18,8 @@ public class LochessIdentityContext : IdentityDbContext<IdentityUser>
     {
     }
 
+    public DbSet<AspNetUser> AspNetUsers { get; set; }
+    public DbSet<Connection> Connections { get; set; }
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -24,16 +27,21 @@ public class LochessIdentityContext : IdentityDbContext<IdentityUser>
         // For example, you can rename the ASP.NET Identity table names and more.
         // Add your customizations after calling base.OnModelCreating(builder);
 
-        //builder.ApplyConfiguration(new ApplicationUserEntityConfiguration());
+        builder.Entity<AspNetUser>().ToTable("AspNetUsers");
+        base.OnModelCreating(builder);
+
+        builder.Entity<Connection>().ToTable("Connections");
+        base.OnModelCreating(builder);
+
+        //builder.ApplyConfiguration(new AspNetUserEntityConfiguration());
     }
 }
 
-//public class ApplicationUserEntityConfiguration : IEntityTypeConfiguration<ApplicationUser>
-//{
-//    public void Configure(EntityTypeBuilder<ApplicationUser> builder)
-//    {
-//        builder.Property(u => u.FirstName).HasMaxLength(255);
-//        builder.Property(u => u.LastName).HasMaxLength(255);
-//    }
-//}
+public class AspNetUserEntityConfiguration : IEntityTypeConfiguration<AspNetUser>
+{
+    public void Configure(EntityTypeBuilder<AspNetUser> builder)
+    {
+        builder.Property(a => a.GroupName).HasMaxLength(255);
+    }
+}
 

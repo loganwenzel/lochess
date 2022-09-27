@@ -4,6 +4,7 @@ using MySql.Data.MySqlClient;
 using lochess.Models;
 using lochess.Classes;
 using lochess.Data;
+using lochess.Areas.Identity.Data;
 
 namespace lochess.Controllers
 {
@@ -12,8 +13,8 @@ namespace lochess.Controllers
         // Setting up connection to the context file and appsettings
         // Necessary for each controller
         private IConfiguration configuration;
-        private LochessDbContext context;
-        public UserController(IConfiguration _configuration, LochessDbContext cc)
+        private LochessIdentityContext context;
+        public UserController(IConfiguration _configuration, LochessIdentityContext cc)
         {
             configuration = _configuration;
             context = cc;
@@ -22,7 +23,7 @@ namespace lochess.Controllers
         // GET: UserController
         public ActionResult Index()
         {
-            List<User> users = context.Users.ToList();
+            List<string> users = context.Users.Select(a => a.UserName).ToList();
             return View(users);
         }
 
@@ -39,33 +40,33 @@ namespace lochess.Controllers
         }
 
         // POST: UserController/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(User user)
-        {
-            // Insert User object into users table using parameterization for security against SQL injections
-            string tableConnectionString = configuration.GetConnectionString("UserTable");
-            string commandString = $"INSERT INTO {tableConnectionString} (first_name, last_name, email, password) " +
-                                   $"VALUES (@firstName, @lastName, @email, @password);";
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public ActionResult Create(User user)
+        //{
+        //    // Insert User object into users table using parameterization for security against SQL injections
+        //    string tableConnectionString = configuration.GetConnectionString("UserTable");
+        //    string commandString = $"INSERT INTO {tableConnectionString} (first_name, last_name, email, password) " +
+        //                           $"VALUES (@firstName, @lastName, @email, @password);";
 
-            List<MySqlParameter> commParameters = new List<MySqlParameter>();
-            commParameters.Add(new MySqlParameter("@firstName", user.FirstName));
-            commParameters.Add(new MySqlParameter("@lastName", user.LastName));
-            commParameters.Add(new MySqlParameter("@email", user.Email));
-            commParameters.Add(new MySqlParameter("@password", user.Password));
+        //    List<MySqlParameter> commParameters = new List<MySqlParameter>();
+        //    commParameters.Add(new MySqlParameter("@firstName", user.FirstName));
+        //    commParameters.Add(new MySqlParameter("@lastName", user.LastName));
+        //    commParameters.Add(new MySqlParameter("@email", user.Email));
+        //    commParameters.Add(new MySqlParameter("@password", user.Password));
 
-            bool success = Utility.InsertMySqlData(commandString, commParameters, configuration);
-            if (success)
-            {
-                // TODO: CREATION SUCCESSFUL POPUP ALERT
-                return RedirectToAction(nameof(Index));
-            }
-            else
-            {
-                // TODO: CREATION UNSUCCESSFUL POPUP ALERT
-                return RedirectToAction(nameof(Index));
-            }
-        }
+        //    bool success = Utility.InsertMySqlData(commandString, commParameters, configuration);
+        //    if (success)
+        //    {
+        //        // TODO: CREATION SUCCESSFUL POPUP ALERT
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //    else
+        //    {
+        //        // TODO: CREATION UNSUCCESSFUL POPUP ALERT
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //}
 
         // GET: UserController/Edit/5
         public ActionResult Edit(int id)

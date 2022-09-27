@@ -5,6 +5,7 @@ using lochess.Hubs;
 using Microsoft.AspNetCore.Identity;
 using lochess.Areas.Identity.Data;
 using Microsoft.AspNetCore.Mvc.Razor;
+using lochess.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("MySqlConnection");
@@ -16,13 +17,10 @@ builder.Services.AddDbContext<LochessDbContext>(options =>
 
 builder.Services.AddDbContext<LochessIdentityContext>(options =>
    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
-builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+builder.Services.AddIdentity<AspNetUser, IdentityRole>()
                 .AddDefaultUI()
-                .AddTokenProvider<DataProtectorTokenProvider<IdentityUser>>(TokenOptions.DefaultProvider)
+                .AddTokenProvider<DataProtectorTokenProvider<AspNetUser>>(TokenOptions.DefaultProvider)
                 .AddEntityFrameworkStores<LochessIdentityContext>();
-
-//builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-//    .AddEntityFrameworkStores<lochessIdentityContext>(); THIS LINE CAUSES ISSUES
 
 builder.Services.AddSignalR();
 
