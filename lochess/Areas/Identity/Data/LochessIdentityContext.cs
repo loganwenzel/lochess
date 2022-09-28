@@ -20,20 +20,22 @@ public class LochessIdentityContext : IdentityDbContext<AspNetUser>
 
     public DbSet<AspNetUser> AspNetUsers { get; set; }
     public DbSet<Connection> Connections { get; set; }
+    public DbSet<Game> Games { get; set; }
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        // Customize the ASP.NET Identity model and override the defaults if needed.
-        // For example, you can rename the ASP.NET Identity table names and more.
-        // Add your customizations after calling base.OnModelCreating(builder);
 
+        // Assign the 'AspNetUser' model to the 'AspNetUsers' table
         builder.Entity<AspNetUser>().ToTable("AspNetUsers");
         base.OnModelCreating(builder);
 
+        // Assign the 'Connection' model to the 'Connections' table
         builder.Entity<Connection>().ToTable("Connections");
         base.OnModelCreating(builder);
 
-        //builder.ApplyConfiguration(new AspNetUserEntityConfiguration());
+        // Assign the 'Game' model to the 'Games' table
+        builder.Entity<Game>().ToTable("Games");
+        base.OnModelCreating(builder);
     }
 }
 

@@ -2,8 +2,10 @@
 using lochess.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
+using NuGet.Protocol.Plugins;
 using System;
 using System.ComponentModel;
+using Ubiety.Dns.Core;
 
 namespace lochess.Hubs
 {
@@ -74,6 +76,31 @@ namespace lochess.Hubs
             // Set the group name of the sender and opponent
             context.AspNetUsers.Where(a => a.UserName == senderUserName).FirstOrDefault().GroupName = groupName;
             context.AspNetUsers.Where(a => a.UserName == opponentUserName).FirstOrDefault().GroupName = groupName;
+
+            // Create Game Logic:
+            Random random = new Random();
+            string whiteUserName;
+            string blackUserName;
+
+            // Let the invitation sender be white if a random number is even
+            if (random.Next() % 2 == 0)
+            {
+                whiteUserName = sender.UserName;
+                blackUserName = opponent.UserName;
+            }
+            else
+            {
+                whiteUserName = sender.UserName;
+                blackUserName = opponent.UserName;
+            }
+            // Create the Game record, and assign white vs. black
+            context.Games.Add(new Game
+            {
+                WhiteUserName = whiteUserName,
+                BlackUserName = blackUserName,
+                GameActive = true
+            });
+
             context.SaveChanges();
 
             // Sends Message to the specified group 'groupName'
@@ -113,7 +140,44 @@ namespace lochess.Hubs
             // Set the group name of the sender and opponent to null
             context.AspNetUsers.Where(a => a.UserName == leaver.UserName).FirstOrDefault().GroupName = null;
             context.AspNetUsers.Where(a => a.UserName == opponent.UserName).FirstOrDefault().GroupName = null;
+
+            // Update the Game record
+            Game game = context.Games.Where(a => (a.WhiteUserName == leaver.UserName || a.BlackUserName == leaver.UserName) && a.GameActive == true).FirstOrDefault();
+            game.GameActive = false;
+            game.Result = "draw";
+            // TODO: ADD IMPLEMENTATION FOR UPDATING THE PGN EACH TIME A MOVE IS MADE - Use the pgn in updatestatus()
+
             context.SaveChanges();
+        }
+
+        public async Task GameOver(string result, string winnerColour)
+        {
+            // Does not matter which player (black or white, inviter or receiver, etc) is used to query the Game
+            AspNetUser player1 = context.Users.Where(a => a.Id == Context.UserIdentifier).FirstOrDefault();
+            Game game = context.Games.Where(a => (a.WhiteUserName == player1.UserName || a.BlackUserName == player1.UserName) && a.GameActive == true).FirstOrDefault();
+            if (result == "draw")
+            {
+                // Game ended in draw
+                game.GameActive = false;
+                game.Result = "draw";
+                context.SaveChanges();
+            }
+            else
+            {
+                // Game was decisive
+                game.GameActive = false;
+
+                // game.Result records who won using the username
+                if (winnerColour == "black")
+                {
+                    game.Result = game.BlackUserName;
+                }
+                else
+                {
+                    game.Result = game.WhiteUserName;
+                }
+                context.SaveChanges();
+            }
         }
 
         // Function for adding rows to the 'Connections' table whenever there is a new connection

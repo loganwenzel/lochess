@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace lochess.Models
+﻿namespace lochess.Models
 {
     public class Connection
     {

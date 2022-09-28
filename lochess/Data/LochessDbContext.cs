@@ -9,10 +9,12 @@ namespace lochess.Data
 {
     public class LochessDbContext : LochessIdentityContext
     {
-        public string ConnectionString { get; set; }
-
         public LochessDbContext(DbContextOptions<LochessDbContext> options) : base(options) 
         {
+        }
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
         }
     }
 }

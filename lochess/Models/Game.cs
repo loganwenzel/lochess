@@ -1,10 +1,14 @@
 ﻿namespace lochess.Models
 {
-    public class Games
+    public class Game
     {
-        public int GameId { get; set; }
-        public int BlackUserId { get; set; }
-        public int WhiteUserId { get; set; }
-        //public HttpPostedFile PgnFile { get; set;  }
+        public int? Id { get; set; }
+        public string BlackUserName { get; set; }
+        public string WhiteUserName { get; set; }
+        public bool GameActive { get; set; }
+        public string? Pgn { get; set; }
+
+        //Game.Result is either: 'draw', '{BlackUserName}', or '{WhiteUserName}' to indicate which player won
+        public string? Result { get; set; }
     }
 }

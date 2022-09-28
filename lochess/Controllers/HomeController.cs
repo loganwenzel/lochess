@@ -1,6 +1,7 @@
 ﻿using lochess.Areas.Identity.Data;
 using lochess.Hubs;
 using lochess.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -10,15 +11,17 @@ namespace lochess.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private LochessIdentityContext context;
-        public HomeController(ILogger<HomeController> logger, LochessIdentityContext cc)
+        UserManager<AspNetUser> UserManager;
+        public HomeController(ILogger<HomeController> logger, LochessIdentityContext cc, UserManager<AspNetUser> userManager)
         {
             _logger = logger;
             context = cc;
+            UserManager = userManager;
         }
 
         public IActionResult Index()
         {
-            List<string> userNames = context.Users.Select(a => a.UserName).ToList();
+            List<string> userNames = context.AspNetUsers.Where(a => a.UserName != UserManager.GetUserName(User)).Select(a => a.UserName).ToList();
             ViewBag.UserNames = userNames;
             return View();
         }

@@ -224,19 +224,36 @@
         function updateStatus() {
             var status = ''
 
-            var moveColor = 'White'
+            var moveColor = 'white'
+            var previousMoveColor = 'black'
             if (game.turn() === 'b') {
-                moveColor = 'Black'
+                moveColor = 'black'
+                previousMoveColor = 'white'
             }
 
+            //TODO: IF CHECKMATE, CALL CHATHUB.CS METHOD
             // checkmate?
             if (game.in_checkmate()) {
                 status = 'Game over, ' + moveColor + ' is in checkmate.'
+
+                var result = 'checkmate'
+                var winnerColour = previousMoveColor
+                connection.invoke("GameOver", result, winnerColour).catch(function (err) {
+                    return console.error(err.toString());
+                });
+                event.preventDefault();
             }
 
             // draw?
             else if (game.in_draw()) {
                 status = 'Game over, drawn position'
+
+                var result = 'draw'
+                var winnerColour = ''
+                connection.invoke("GameOver", result, winnerColour).catch(function (err) {
+                    return console.error(err.toString());
+                });
+                event.preventDefault();
             }
 
             // game still on
