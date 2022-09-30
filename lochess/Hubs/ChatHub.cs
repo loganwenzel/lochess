@@ -35,14 +35,14 @@ namespace lochess.Hubs
         }
 
         // Function for sending the updated fenString
-        public async Task SendMove(string fenString)
+        public async Task SendMove(string source, string target)
         {
             // Find the opponent's AspNetUser record based on the passed in UserName
             AspNetUser sender = context.Users.Where(a => a.Id == Context.UserIdentifier).FirstOrDefault();
             string groupName = sender.GroupName;
 
             // Send move to group
-            await Clients.Group(groupName).SendAsync("ReceiveMove", fenString);
+            await Clients.Group(groupName).SendAsync("ReceiveMove", source, target);
         }
 
         // Function for creating a group between the sender and opponent.
@@ -62,7 +62,7 @@ namespace lochess.Hubs
             string groupName = senderUserName + "_" + opponentUserName;
 
             // Add connection ids of the sender to the group
-            foreach(string connectionId in senderConnectionIds)
+            foreach (string connectionId in senderConnectionIds)
             {
                 await Groups.AddToGroupAsync(connectionId, groupName);
             }
@@ -78,34 +78,43 @@ namespace lochess.Hubs
             context.AspNetUsers.Where(a => a.UserName == opponentUserName).FirstOrDefault().GroupName = groupName;
 
             // Create Game Logic:
-            Random random = new Random();
-            string whiteUserName;
-            string blackUserName;
-
-            // Let the invitation sender be white if a random number is even
-            if (random.Next() % 2 == 0)
+            // Only create a game if there is no currently active game with either player
+            if (context.Games.Where(a => ((a.WhiteUserName == senderUserName || a.BlackUserName == senderUserName) && a.GameActive == true)
+                                   || (a.WhiteUserName == opponentUserName || a.BlackUserName == opponentUserName) && a.GameActive == true).Count() == 0)
             {
-                whiteUserName = sender.UserName;
-                blackUserName = opponent.UserName;
+
+                Random random = new Random();
+                string whiteUserName;
+                string blackUserName;
+
+                // Let the invitation sender be white if a random number is even
+                if (random.Next() % 2 == 0)
+                {
+                    whiteUserName = sender.UserName;
+                    blackUserName = opponent.UserName;
+                }
+                else
+                {
+                    whiteUserName = sender.UserName;
+                    blackUserName = opponent.UserName;
+                }
+                // Create the Game record, and assign white vs. black
+                context.Games.Add(new Game
+                {
+                    WhiteUserName = whiteUserName,
+                    BlackUserName = blackUserName,
+                    GameActive = true
+                });
+
+                // Set the initial JS variables  
+                await Clients.Group(groupName).SendAsync("GameStart", blackUserName, whiteUserName);
+
+                context.SaveChanges();
+
+                // Sends Message to the specified group 'groupName'
+                await Clients.Group(groupName).SendAsync("ReceiveMessage", "Lochess", $"{sender.FirstName} {sender.LastName} and {opponent.FirstName} {opponent.LastName} have joined the group {groupName}.");
+                await Clients.Group(groupName).SendAsync("ReceiveInvite");
             }
-            else
-            {
-                whiteUserName = sender.UserName;
-                blackUserName = opponent.UserName;
-            }
-            // Create the Game record, and assign white vs. black
-            context.Games.Add(new Game
-            {
-                WhiteUserName = whiteUserName,
-                BlackUserName = blackUserName,
-                GameActive = true
-            });
-
-            context.SaveChanges();
-
-            // Sends Message to the specified group 'groupName'
-            await Clients.Group(groupName).SendAsync("ReceiveMessage", "Lochess", $"{sender.FirstName} {sender.LastName} and {opponent.FirstName} {opponent.LastName} have joined the group {groupName}.");
-            await Clients.Group(groupName).SendAsync("ReceiveInvite");
         }
 
         // Function for deleting the group that exists between the leaver and the opponent.
@@ -117,66 +126,74 @@ namespace lochess.Hubs
             // Find opponent from Group Name
             AspNetUser opponent = context.Users.Where(a => a.GroupName == leaver.GroupName && a.Id != leaver.Id).FirstOrDefault();
 
-            string groupName = leaver.GroupName;
-
-            // Fetch connection ids from the Connections table for the leaver and opponent
-            List<string> leaverConnectionIds = context.Connections.Where(a => a.UserAgent == leaver.UserName).Select(a => a.ConnectionId).ToList();
-            List<string> opponentConnectionIds = context.Connections.Where(a => a.UserAgent == opponent.UserName).Select(a => a.ConnectionId).ToList();
-
-            // Sends Message to the specified group 'groupName'
-            await Clients.Group(groupName).SendAsync("ReceiveMessage", "Lochess", $"{leaver.FirstName} {leaver.LastName} and {opponent.FirstName} {opponent.LastName} have left the group {groupName}.");
-            await Clients.Group(groupName).SendAsync("MatchLeft");
-
-            // Remove all connection ids of sender and opponent from the group
-            foreach (string connectionId in leaverConnectionIds)
+            if (opponent != null)
             {
-                await Groups.RemoveFromGroupAsync(connectionId, groupName);
+                string groupName = leaver.GroupName;
+
+                // Fetch connection ids from the Connections table for the leaver and opponent
+                List<string> leaverConnectionIds = context.Connections.Where(a => a.UserAgent == leaver.UserName).Select(a => a.ConnectionId).ToList();
+                List<string> opponentConnectionIds = context.Connections.Where(a => a.UserAgent == opponent.UserName).Select(a => a.ConnectionId).ToList();
+
+                // Sends Message to the specified group 'groupName'
+                await Clients.Group(groupName).SendAsync("ReceiveMessage", "Lochess", $"{leaver.FirstName} {leaver.LastName} and {opponent.FirstName} {opponent.LastName} have left the group {groupName}.");
+                await Clients.Group(groupName).SendAsync("MatchLeft");
+
+                // Remove all connection ids of sender and opponent from the group
+                foreach (string connectionId in leaverConnectionIds)
+                {
+                    await Groups.RemoveFromGroupAsync(connectionId, groupName);
+                }
+                foreach (string connectionId in opponentConnectionIds)
+                {
+                    await Groups.RemoveFromGroupAsync(connectionId, groupName);
+                }
+
+                // Set the group name of the sender and opponent to null
+                context.AspNetUsers.Where(a => a.UserName == leaver.UserName).FirstOrDefault().GroupName = null;
+                context.AspNetUsers.Where(a => a.UserName == opponent.UserName).FirstOrDefault().GroupName = null;
+
+                // Update the Game record
+                Game game = context.Games.Where(a => (a.WhiteUserName == leaver.UserName || a.BlackUserName == leaver.UserName) && a.GameActive == true).FirstOrDefault();
+                game.GameActive = false;
+                game.Result = "draw";
+                // TODO: ADD IMPLEMENTATION FOR UPDATING THE PGN EACH TIME A MOVE IS MADE - Use the pgn in updatestatus()
+
+                context.SaveChanges();
             }
-            foreach (string connectionId in opponentConnectionIds)
-            {
-                await Groups.RemoveFromGroupAsync(connectionId, groupName);
-            }
-
-            // Set the group name of the sender and opponent to null
-            context.AspNetUsers.Where(a => a.UserName == leaver.UserName).FirstOrDefault().GroupName = null;
-            context.AspNetUsers.Where(a => a.UserName == opponent.UserName).FirstOrDefault().GroupName = null;
-
-            // Update the Game record
-            Game game = context.Games.Where(a => (a.WhiteUserName == leaver.UserName || a.BlackUserName == leaver.UserName) && a.GameActive == true).FirstOrDefault();
-            game.GameActive = false;
-            game.Result = "draw";
-            // TODO: ADD IMPLEMENTATION FOR UPDATING THE PGN EACH TIME A MOVE IS MADE - Use the pgn in updatestatus()
-
-            context.SaveChanges();
         }
 
-        public async Task GameOver(string result, string winnerColour)
+        public async Task GameOver(string result, string winnerColour, string pgn)
         {
             // Does not matter which player (black or white, inviter or receiver, etc) is used to query the Game
             AspNetUser player1 = context.Users.Where(a => a.Id == Context.UserIdentifier).FirstOrDefault();
             Game game = context.Games.Where(a => (a.WhiteUserName == player1.UserName || a.BlackUserName == player1.UserName) && a.GameActive == true).FirstOrDefault();
-            if (result == "draw")
+            if (game != null)
             {
-                // Game ended in draw
-                game.GameActive = false;
-                game.Result = "draw";
-                context.SaveChanges();
-            }
-            else
-            {
-                // Game was decisive
-                game.GameActive = false;
-
-                // game.Result records who won using the username
-                if (winnerColour == "black")
+                if (result == "draw")
                 {
-                    game.Result = game.BlackUserName;
+                    // Game ended in draw
+                    game.GameActive = false;
+                    game.Result = "draw";
+                    game.Pgn = pgn;
+                    context.SaveChanges();
                 }
                 else
                 {
-                    game.Result = game.WhiteUserName;
+                    // Game was decisive
+                    game.GameActive = false;
+                    game.Pgn = pgn;
+
+                    // game.Result records who won using the username
+                    if (winnerColour == "black")
+                    {
+                        game.Result = game.BlackUserName;
+                    }
+                    else
+                    {
+                        game.Result = game.WhiteUserName;
+                    }
+                    context.SaveChanges();
                 }
-                context.SaveChanges();
             }
         }
 
@@ -229,6 +246,9 @@ namespace lochess.Hubs
         {
             var connection = context.Connections.Find(Context.ConnectionId);
             connection.Connected = false;
+
+            // Kick user out of game when they disconnect
+            RemoveFromGroup();
 
             context.SaveChanges();
             await base.OnDisconnectedAsync(exception);

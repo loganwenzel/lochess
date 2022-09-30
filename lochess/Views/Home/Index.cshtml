@@ -18,15 +18,7 @@
             <h1 class="display-4 text-primary">Play</h1>
             <p> A multiplayer chess webapp built with asp.net MVC, chessboardjs, and SignalR</p>
         </div>
-        <div class="container">
-            <div class="mx-auto" id="myBoard" style="width: 50%"></div>
-            <label>Status:</label>
-            <div id="status"></div>
-            <label>FEN:</label>
-            <div id="fen"></div>
-            <label>PGN:</label>
-            <div id="pgn"></div>
-        </div>
+    <div class="mx-auto" id="myBoard" style="width: 50%"></div>
     </div>
     <div class="col-md-4">
         <div class="text-center">
@@ -157,20 +149,28 @@
         /* SECTION: signalr connection for chess game communication */
 
         // Function for sending new position to opponent from the new FEN string
-        function sendMove(fenString) {
-            connection.invoke("SendMove", fenString).catch(function (err) {
+        function sendMove(source, target) {
+            connection.invoke("SendMove", source, target).catch(function (err) {
                 return console.error(err.toString());
             });
             event.preventDefault();
         }
 
         // Update board position with FEN string received from opponent
-        connection.on("ReceiveMove", function (fenString) {
+        connection.on("ReceiveMove", function (source, target) {
             // Update board position
-            board.position(fenString);
+
+            var move = game.move({
+                from: source,
+                to: target,
+                promotion: 'q' // NOTE: always promote to a queen for example simplicity
+            })
+
+            game.move(move);
+
+            board.position(game.fen());
 
             // Update game turn
-            game.load(fenString);
 
             // Update game status elements
             updateStatus()
@@ -186,15 +186,42 @@
         var $fen = $('#fen')
         var $pgn = $('#pgn')
 
+        var whiteUserName = '';
+        var blackUserName = '';
+        var boardOrientation = 'white';
+
+
+        var config = {
+            draggable: true,
+            position: 'start',
+            onDragStart: onDragStart,
+            onDrop: onDrop,
+            onSnapEnd: onSnapEnd
+        }
+        board = Chessboard('myBoard', config)
+
+        // Setting variables at the start of the game so who is white/black is stored in memory
+        connection.on("GameStart", function (BlackUserName, WhiteUserName) {
+            whiteUserName = WhiteUserName;
+            blackUserName = BlackUserName;
+
+            // Flip the orientation for player with black: CURRENTLY DOESNT WORK FOR SOME REASON
+            //if ('@(UserManager.GetUserName(User))' === blackUserName){
+            //    board.flip
+            //}
+        });
+
         // Fires when a piece is picked up. The drag action is prevented if the function returns false
         function onDragStart(source, piece, position, orientation) {
             // do not pick up pieces if the game is over
             if (game.game_over()) return false
 
-            // only pick up pieces for the side to move
-            if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-                (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
-                return false
+            // Only allow player to pick up their own pieces
+            if ('@(UserManager.GetUserName(User))' === blackUserName){
+                if (piece.search(/^w/) !== -1) return false
+            }
+            else{
+                if (piece.search(/^b/) !== -1) return false
             }
         }
 
@@ -210,9 +237,9 @@
             if (move === null) return 'snapback'
 
             updateStatus()
-
             // Send move to opponent's board
-            sendMove(game.fen())
+            //var moveString = source + '-' + target
+            sendMove(source, target)
         }
 
         // update the board position after the piece snap
@@ -231,14 +258,14 @@
                 previousMoveColor = 'white'
             }
 
-            //TODO: IF CHECKMATE, CALL CHATHUB.CS METHOD
             // checkmate?
             if (game.in_checkmate()) {
                 status = 'Game over, ' + moveColor + ' is in checkmate.'
 
                 var result = 'checkmate'
                 var winnerColour = previousMoveColor
-                connection.invoke("GameOver", result, winnerColour).catch(function (err) {
+                var pgn = game.pgn()
+                connection.invoke("GameOver", result, winnerColour, pgn).catch(function (err) {
                     return console.error(err.toString());
                 });
                 event.preventDefault();
@@ -250,7 +277,8 @@
 
                 var result = 'draw'
                 var winnerColour = ''
-                connection.invoke("GameOver", result, winnerColour).catch(function (err) {
+                var pgn = game.pgn()
+                connection.invoke("GameOver", result, winnerColour, pgn).catch(function (err) {
                     return console.error(err.toString());
                 });
                 event.preventDefault();
@@ -271,16 +299,15 @@
             $pgn.html(game.pgn())
         }
 
-        var config = {
-            draggable: true,
-            position: 'start',
-            onDragStart: onDragStart,
-            onDrop: onDrop,
-            onSnapEnd: onSnapEnd
-        }
-        board = Chessboard('myBoard', config)
-
         updateStatus()
+
+        // Before unload handling:
+        window.addEventListener('beforeunload', function (e) {
+
+            // Check if any of the input fields are filled
+            e.preventDefault();
+            e.returnValue = '';
+        });
     </script>
 }
 
