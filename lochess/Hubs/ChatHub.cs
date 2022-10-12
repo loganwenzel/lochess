@@ -32,6 +32,9 @@ namespace lochess.Hubs
 
             // Send message to group
             await Clients.Group(groupName).SendAsync("ReceiveMessage", sender.FirstName, message);
+
+            // Testing
+            //await Clients.All.SendAsync("ReceiveMessage", sender.FirstName, message);
         }
 
         // Function for sending the updated fenString
@@ -45,23 +48,24 @@ namespace lochess.Hubs
             await Clients.Group(groupName).SendAsync("ReceiveMove", source, target);
         }
 
-        // Function for creating a group between the sender and opponent.
+        // Function for creating a group between the sender and opponent. Only the sender is added to the signalr group here.
         // Called when the 'Play' modal is submitted
-        public async Task AddToGroup(string opponentUserName)
+        public async Task CreateGroup(string opponentUserName)
         {
             AspNetUser sender = context.Users.Where(a => a.Id == Context.UserIdentifier).FirstOrDefault();
             string senderUserName = sender.UserName;
 
             AspNetUser opponent = context.Users.Where(a => a.UserName == opponentUserName).FirstOrDefault();
+            if (opponent == null) return;
 
             // Fetch connection ids from the Connections table for the sender and opponent
-            List<string> senderConnectionIds = context.Connections.Where(a => a.UserAgent == senderUserName).Select(a => a.ConnectionId).ToList();
-            List<string> opponentConnectionIds = context.Connections.Where(a => a.UserAgent == opponentUserName).Select(a => a.ConnectionId).ToList();
+            List<string> senderConnectionIds = context.Connections.Where(a => a.UserAgent == senderUserName && a.Connected == true).Select(a => a.ConnectionId).ToList();
+            List<string> opponentConnectionIds = context.Connections.Where(a => a.UserAgent == opponentUserName && a.Connected == true).Select(a => a.ConnectionId).ToList();
 
             // Define groupName as the sender's username underscore the opponent's username for simplicity
             string groupName = senderUserName + "_" + opponentUserName;
 
-            // Add connection ids of the sender to the group
+            // Add connection ids of the sender to the group.
             foreach (string connectionId in senderConnectionIds)
             {
                 await Groups.AddToGroupAsync(connectionId, groupName);
@@ -111,10 +115,32 @@ namespace lochess.Hubs
 
                 context.SaveChanges();
 
-                // Sends Message to the specified group 'groupName'
-                await Clients.Group(groupName).SendAsync("ReceiveMessage", "Lochess", $"{sender.FirstName} {sender.LastName} and {opponent.FirstName} {opponent.LastName} have joined the group {groupName}.");
-                await Clients.Group(groupName).SendAsync("ReceiveInvite");
+                // Joins the opponent to the game
+                await Clients.OthersInGroup(groupName).SendAsync("ReceiveInvite");
             }
+        }
+
+        // Function for joining the created group for the invite receiver.
+        // Called when the 'Play' modal is submitted
+        public async Task JoinGroup(string groupName)
+        {
+            AspNetUser joiner = context.Users.Where(a => a.Id == Context.UserIdentifier).FirstOrDefault();
+            string joinerUserName = joiner.UserName;
+
+            // Fetch connection ids from the Connections table for the joiner
+            List<string> senderConnectionIds = context.Connections.Where(a => a.UserAgent == joinerUserName && a.Connected == true).Select(a => a.ConnectionId).ToList();
+
+            // Add connection ids of the joiner to the group
+            foreach (string connectionId in senderConnectionIds)
+            {
+                await Groups.AddToGroupAsync(connectionId, groupName);
+            }
+
+            // Set the initial JS variables for black vs. white
+            string blackUserName = context.Games.Where(a => a.GameActive == true && (a.BlackUserName == joinerUserName || a.WhiteUserName == joinerUserName)).FirstOrDefault().BlackUserName;
+            string whiteUserName = context.Games.Where(a => a.GameActive == true && (a.BlackUserName == joinerUserName || a.WhiteUserName == joinerUserName)).FirstOrDefault().WhiteUserName;
+
+            await Clients.Group(groupName).SendAsync("GameStart", blackUserName, whiteUserName);
         }
 
         // Function for deleting the group that exists between the leaver and the opponent.
@@ -156,7 +182,6 @@ namespace lochess.Hubs
                 Game game = context.Games.Where(a => (a.WhiteUserName == leaver.UserName || a.BlackUserName == leaver.UserName) && a.GameActive == true).FirstOrDefault();
                 game.GameActive = false;
                 game.Result = "draw";
-                // TODO: ADD IMPLEMENTATION FOR UPDATING THE PGN EACH TIME A MOVE IS MADE - Use the pgn in updatestatus()
 
                 context.SaveChanges();
             }
@@ -247,8 +272,8 @@ namespace lochess.Hubs
             var connection = context.Connections.Find(Context.ConnectionId);
             connection.Connected = false;
 
-            // Kick user out of game when they disconnect
-            RemoveFromGroup();
+            // Kick users out of game when one disconnects: TODO: Figure out why this causes issues
+            //RemoveFromGroup();
 
             context.SaveChanges();
             await base.OnDisconnectedAsync(exception);

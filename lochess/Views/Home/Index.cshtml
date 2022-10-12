@@ -1,312 +1,66 @@
 ﻿@using Microsoft.AspNetCore.Identity
 
-@inject SignInManager<AspNetUser> SignInManager
-@inject UserManager<AspNetUser> UserManager
-
 @{
     ViewData["Title"] = "Home Page";
 }
-
-<div class="d-flex flex-row">
-    <button class="btn btn-primary btn-lg mx-auto" id="playButton" data-bs-toggle="modal" data-bs-target="#playModal">Play</button>
-    <button class="btn btn-danger btn-lg mx-auto" id="leaveMatchButton" style="display: none;">Leave Game</button>
-</div>
-
-<div class="d-flex flex-row">
-    <div class="col-md-8">
-        <div class="text-center">
-            <h1 class="display-4 text-primary">Play</h1>
-            <p> A multiplayer chess webapp built with asp.net MVC, chessboardjs, and SignalR</p>
+<div class="row w-100" style="position: fixed; top: 40%;">
+    @if (User.Identity.IsAuthenticated)
+    {
+        <div class="col-md-2 col-sm-5 mx-auto">
+            <button class="btn btn-primary btn-lg mx-auto w-100" id="playButton" data-bs-toggle="modal" data-bs-target="#playModal">Play</button>
         </div>
-    <div class="mx-auto" id="myBoard" style="width: 50%"></div>
-    </div>
-    <div class="col-md-4">
-        <div class="text-center">
-            <h1 class="display-4 text-primary">Message</h1>
-            <p>Message your opponent in real time</p>
+    }
+    else
+    {
+        <div class="col-md-2 col-sm-5 mx-auto d-flex justify-content-center">
+            <a class="btn btn-primary btn-lg w-100" asp-area="Identity" asp-page="/Account/Login">Login</a>
         </div>
-        <div class="row mx-2">
-            <div class="col">
-                <input class="form-control" type="text" id="messageInput" placeholder="Message" />
-            </div>
-            <div class="col-md-2 col-sm-4">
-                <input class="btn btn-primary" type="button" id="sendButton" value="Send" />
-            </div>
+        <div class="w-100"></div>
+        <div class="col-md-2 col-sm-5 mx-auto my-3 d-flex justify-content-center">
+            <a class="btn btn-primary btn-lg w-100" asp-area="Identity" asp-page="/Account/Register">Register</a>
         </div>
-        <div class="row">&nbsp;</div>
-        <div class="row">
-
-        </div>
-        <div class="row">
-            <div class="col-6">
-                <ul id="messagesList"></ul>
-            </div>
-        </div>
+    }
     </div>
 </div>
 
 <!-- SECTION: Modals-->
-<!-- Modal -->
+<!-- PlayModal -->
 <div class="modal fade" id="playModal" tabindex="-1" role="dialog" aria-labelledby="playModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title mx-auto" id="playModalLabel">Play</h5>
             </div>
-            <div class="modal-body">
-                <div class="form-group py-2">
-                    <h6 class="mx-auto"> Who do you want to play? </h6>
-                    @Html.DropDownList("inviteInput", new SelectList(ViewBag.UserNames), new { @class = "form-select", @id = "inviteInput"})
+            <form asp-controller="Game" asp-action="Index" method="post">
+                <div class="modal-body">
+                    <div class="form-group py-2">
+                        <h6 class="mx-auto"> Who do you want to play? </h6>
+                        @Html.DropDownList("opponentUserName", new SelectList(ViewBag.UserNames), new { @class = "form-select", @id = "opponentUserName"})
+                    </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary position-left" data-bs-dismiss="modal">Discard</button>
-                <input type="submit" id="submitInvite" class="btn btn-primary" value="Send Invite" data-bs-dismiss="modal"/>
-            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary position-left" data-bs-dismiss="modal">Discard</button>
+                    <input type="submit" id="submitInvite" class="btn btn-primary" value="Send Invite" data-bs-dismiss="modal" />
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-@section scripts {
-    <!-- chessboardjs script -->
-    <script src="~/chessboardjs/js/chess.js"></script>
-
+@section scripts{
     <!-- signalr script -->
     <script src="~/js/signalr/dist/browser/signalr.js"></script>
 
-    <!-- page script (TODO: eventually move this to a separate JS file) -->
     <script>
         "use strict";
-
         var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
 
-        /* SECTION: signalr connection for instant messaging */
+        // Start the connection - runs on page load
+        connection.start();
 
-        //Disable the send button until connection is established.
-        document.getElementById("sendButton").disabled = true;
-
-        connection.on("ReceiveMessage", function (sender, message) {
-            var li = document.createElement("li");
-            document.getElementById("messagesList").appendChild(li);
-            // We can assign user-supplied strings to an element's textContent because it
-            // is not interpreted as markup. If you're assigning in any other way, you
-            // should be aware of possible script injection concerns.
-            li.textContent = `${sender} says ${message}`;
-        });
-
-        connection.start().then(function () {
-            document.getElementById("sendButton").disabled = false;
-        }).catch(function (err) {
-            return console.error(err.toString());
-        });
-
-        /* SECTION: signalr connection for creating group */
-
-        // Send Invite Button
-        document.getElementById("submitInvite").addEventListener("click", function (event) {
-            var opponent = document.getElementById("inviteInput").value;
-            connection.invoke("AddToGroup", opponent).catch(function (err) {
-                return console.error(err.toString());
-            });
-            event.preventDefault();
-        });
-
-        // Send Message Button
-        document.getElementById("sendButton").addEventListener("click", function (event) {
-            var message = document.getElementById("messageInput").value;
-            connection.invoke("SendMessage", message).catch(function (err) {
-                return console.error(err.toString());
-            });
-            event.preventDefault();
-        });
-
-        // Leave Match Button
-        document.getElementById("leaveMatchButton").addEventListener("click", function (event) {
-            connection.invoke("RemoveFromGroup").catch(function (err) {
-                return console.error(err.toString());
-            });
-            event.preventDefault();
-        });
-
-        // Replace 'Play' with 'Leave Match' upon entering a group
+        // Navigate to Game/Index upon receiving an invite
         connection.on("ReceiveInvite", function () {
-            document.getElementById("playButton").disabled = true;
-            document.getElementById("playButton").style.display = "none";
-
-            document.getElementById("leaveMatchButton").disabled = false;
-            document.getElementById("leaveMatchButton").style.display = "block";
-        });
-
-        // Replace 'Leave Match' with 'Play' upon leaving a group
-        connection.on("MatchLeft", function () {
-            document.getElementById("playButton").disabled = false;
-            document.getElementById("playButton").style.display = "block";
-
-            document.getElementById("leaveMatchButton").disabled = true;
-            document.getElementById("leaveMatchButton").style.display = "none";
-        });
-
-        /* SECTION: signalr connection for chess game communication */
-
-        // Function for sending new position to opponent from the new FEN string
-        function sendMove(source, target) {
-            connection.invoke("SendMove", source, target).catch(function (err) {
-                return console.error(err.toString());
-            });
-            event.preventDefault();
-        }
-
-        // Update board position with FEN string received from opponent
-        connection.on("ReceiveMove", function (source, target) {
-            // Update board position
-
-            var move = game.move({
-                from: source,
-                to: target,
-                promotion: 'q' // NOTE: always promote to a queen for example simplicity
-            })
-
-            game.move(move);
-
-            board.position(game.fen());
-
-            // Update game turn
-
-            // Update game status elements
-            updateStatus()
-        });
-
-
-        /* SECTION: chessboardjs & chess.js configuration */
-
-        // Integration of chess.js API to only allow legal moves:
-        var board = null
-        var game = new Chess()
-        var $status = $('#status')
-        var $fen = $('#fen')
-        var $pgn = $('#pgn')
-
-        var whiteUserName = '';
-        var blackUserName = '';
-        var boardOrientation = 'white';
-
-
-        var config = {
-            draggable: true,
-            position: 'start',
-            onDragStart: onDragStart,
-            onDrop: onDrop,
-            onSnapEnd: onSnapEnd
-        }
-        board = Chessboard('myBoard', config)
-
-        // Setting variables at the start of the game so who is white/black is stored in memory
-        connection.on("GameStart", function (BlackUserName, WhiteUserName) {
-            whiteUserName = WhiteUserName;
-            blackUserName = BlackUserName;
-
-            // Flip the orientation for player with black: CURRENTLY DOESNT WORK FOR SOME REASON
-            //if ('@(UserManager.GetUserName(User))' === blackUserName){
-            //    board.flip
-            //}
-        });
-
-        // Fires when a piece is picked up. The drag action is prevented if the function returns false
-        function onDragStart(source, piece, position, orientation) {
-            // do not pick up pieces if the game is over
-            if (game.game_over()) return false
-
-            // Only allow player to pick up their own pieces
-            if ('@(UserManager.GetUserName(User))' === blackUserName){
-                if (piece.search(/^w/) !== -1) return false
-            }
-            else{
-                if (piece.search(/^b/) !== -1) return false
-            }
-        }
-
-        function onDrop(source, target) {
-            // see if the move is legal
-            var move = game.move({
-                from: source,
-                to: target,
-                promotion: 'q' // NOTE: always promote to a queen for example simplicity
-            })
-
-            // illegal move
-            if (move === null) return 'snapback'
-
-            updateStatus()
-            // Send move to opponent's board
-            //var moveString = source + '-' + target
-            sendMove(source, target)
-        }
-
-        // update the board position after the piece snap
-        // for castling, en passant, pawn promotion
-        function onSnapEnd() {
-            board.position(game.fen())
-        }
-
-        function updateStatus() {
-            var status = ''
-
-            var moveColor = 'white'
-            var previousMoveColor = 'black'
-            if (game.turn() === 'b') {
-                moveColor = 'black'
-                previousMoveColor = 'white'
-            }
-
-            // checkmate?
-            if (game.in_checkmate()) {
-                status = 'Game over, ' + moveColor + ' is in checkmate.'
-
-                var result = 'checkmate'
-                var winnerColour = previousMoveColor
-                var pgn = game.pgn()
-                connection.invoke("GameOver", result, winnerColour, pgn).catch(function (err) {
-                    return console.error(err.toString());
-                });
-                event.preventDefault();
-            }
-
-            // draw?
-            else if (game.in_draw()) {
-                status = 'Game over, drawn position'
-
-                var result = 'draw'
-                var winnerColour = ''
-                var pgn = game.pgn()
-                connection.invoke("GameOver", result, winnerColour, pgn).catch(function (err) {
-                    return console.error(err.toString());
-                });
-                event.preventDefault();
-            }
-
-            // game still on
-            else {
-                status = moveColor + ' to move'
-
-                // check?
-                if (game.in_check()) {
-                    status += ', ' + moveColor + ' is in check'
-                }
-            }
-
-            $status.html(status)
-            $fen.html(game.fen())
-            $pgn.html(game.pgn())
-        }
-
-        updateStatus()
-
-        // Before unload handling:
-        window.addEventListener('beforeunload', function (e) {
-
-            // Check if any of the input fields are filled
-            e.preventDefault();
-            e.returnValue = '';
+            window.location.href = '@(Url.Action("Index", "Game"))';
         });
     </script>
 }
