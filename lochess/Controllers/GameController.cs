@@ -16,16 +16,22 @@ namespace lochess.Controllers
             UserManager = userManager;
         }
 
+        // GET: GameController
+        public IActionResult Index()
+        {
+            return View();
+        }
+
         [HttpPost]
         // Use optional input set to a default value
-        public IActionResult Index(string opponentUserName)
+        public IActionResult Play(string opponentUserName)
         {
             // Pass in opponentUserName so page AddToGroup method can be called on page load
             ViewBag.opponentUserName = opponentUserName;
             return View();
         }
 
-        public IActionResult Index()
+        public IActionResult Play()
         {
             // Set createGroup to false when this method is posted to from the sender
             ViewBag.groupName = context.Users.Where(a => a.UserName == UserManager.GetUserName(User)).FirstOrDefault().GroupName;

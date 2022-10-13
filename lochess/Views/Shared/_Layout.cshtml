@@ -33,13 +33,13 @@
                     <div class="navbar-collapse collapse d-sm-inline-flex mx-5">
                         <ul class="navbar-nav flex-grow-1 justify-content-between">
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="User" asp-action="Index">Play</a>
+                                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Play</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="User" asp-action="Index">Friends</a>
+                                <a class="nav-link" asp-area="" asp-controller="AspNetUser" asp-action="Index">Friends</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="" asp-controller="User" asp-action="Index">Games</a>
+                                <a class="nav-link" asp-area="" asp-controller="Game" asp-action="Index">Games</a>
                             </li>
                             <partial name="_LoginPartial" />
                         </ul>
@@ -49,7 +49,7 @@
         </nav>
     </header>
 
-    <main role="main" class="p-3">
+    <main role="main">
         <div class="container-fluid">
             @RenderBody()
         </div>

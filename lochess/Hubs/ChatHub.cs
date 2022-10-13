@@ -160,8 +160,7 @@ namespace lochess.Hubs
                 List<string> leaverConnectionIds = context.Connections.Where(a => a.UserAgent == leaver.UserName).Select(a => a.ConnectionId).ToList();
                 List<string> opponentConnectionIds = context.Connections.Where(a => a.UserAgent == opponent.UserName).Select(a => a.ConnectionId).ToList();
 
-                // Sends Message to the specified group 'groupName'
-                await Clients.Group(groupName).SendAsync("ReceiveMessage", "Lochess", $"{leaver.FirstName} {leaver.LastName} and {opponent.FirstName} {opponent.LastName} have left the group {groupName}.");
+                // Leave the page now that the game has been aborted/resigned
                 await Clients.Group(groupName).SendAsync("MatchLeft");
 
                 // Remove all connection ids of sender and opponent from the group
@@ -180,8 +179,11 @@ namespace lochess.Hubs
 
                 // Update the Game record
                 Game game = context.Games.Where(a => (a.WhiteUserName == leaver.UserName || a.BlackUserName == leaver.UserName) && a.GameActive == true).FirstOrDefault();
-                game.GameActive = false;
-                game.Result = "draw";
+                if (game != null)
+                {
+                    game.GameActive = false;
+                    game.Result = "draw";
+                }
 
                 context.SaveChanges();
             }
@@ -271,9 +273,6 @@ namespace lochess.Hubs
         {
             var connection = context.Connections.Find(Context.ConnectionId);
             connection.Connected = false;
-
-            // Kick users out of game when one disconnects: TODO: Figure out why this causes issues
-            //RemoveFromGroup();
 
             context.SaveChanges();
             await base.OnDisconnectedAsync(exception);

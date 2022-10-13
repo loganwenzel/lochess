@@ -31,7 +31,7 @@
             <div class="modal-header">
                 <h5 class="modal-title mx-auto" id="playModalLabel">Play</h5>
             </div>
-            <form asp-controller="Game" asp-action="Index" method="post">
+            <form asp-controller="Game" asp-action="Play" method="post">
                 <div class="modal-body">
                     <div class="form-group py-2">
                         <h6 class="mx-auto"> Who do you want to play? </h6>
@@ -58,9 +58,9 @@
         // Start the connection - runs on page load
         connection.start();
 
-        // Navigate to Game/Index upon receiving an invite
+        // Navigate to Game/Play upon receiving an invite
         connection.on("ReceiveInvite", function () {
-            window.location.href = '@(Url.Action("Index", "Game"))';
+            window.location.href = '@(Url.Action("Play", "Game"))';
         });
     </script>
 }
