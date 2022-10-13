@@ -22,3 +22,5 @@ Upcoming features include:
 - Implement security measures for preventing XSS, SQL Injection, CSRF, etc...
 - Create custom error page for error handling
 - Overhaul UI with Figma, and create CSS animations for winning, losing, and drawing games
+
+![image](https://user-images.githubusercontent.com/70664813/195665941-5f0e9099-8b39-4b43-a0dc-bd5777b5aeb7.png)
