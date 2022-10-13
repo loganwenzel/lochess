@@ -16,4 +16,9 @@ Current features include:
 Upcoming features include:
 - Create 'friend' functionality
 - Build Games and Friends pages to view all past games and list of friends
-- 
+- Create functionality for replaying/analyzing past games
+- Integration with the chess.com API for syncing accounts and loading in games for analysis
+- Create dashboard for game analysis that shows statistics/metrics of each game
+- Implement security measures for preventing XSS, SQL Injection, CSRF, etc...
+- Create custom error page for error handling
+- Overhaul UI with Figma, and create CSS animations for winning, losing, and drawing games
