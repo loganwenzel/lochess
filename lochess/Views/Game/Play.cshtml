@@ -2,38 +2,100 @@
 
 @inject SignInManager<AspNetUser> SignInManager
 @inject UserManager<AspNetUser> UserManager
-
+<div class="row text-center">
+    <h1 class="display-4 text-primary">Play</h1>
+</div>
 <div class="d-flex flex-row">
+    <div class="col-md-2">
+        <div class="text-center">
+            <h6>Status</h6>
+        </div>
+        <div class="container-fluid border border-primary rounded" id="dashboardContainer">
+            <div class="row border-bottom border-primary" style="height: 20%;">
+                <p id="opponentUserName"></p>
+            </div>
+            <div class="row border-bottom border-primary" style="height: 30%;"></div>
+            <div class="row border-bottom border-primary" style="height: 30%;"></div>
+            <div class="row" style="height: 20%;">
+                <p id="playerUserName"></p>
+            </div>
+        </div>
+    </div>
     <div class="col-md-8">
         <div class="text-center">
-            <h1 class="display-4 text-primary">Play</h1>
-            <p> A multiplayer chess webapp built with asp.net MVC, chessboardjs, and SignalR</p>
+            <h6> A multiplayer chess webapp built with ASP.NET MVC, chessboardjs, and SignalR</h6>
         </div>
         <div class="mx-auto" id="myBoard" style="width: 50%"></div>
         <div class="text-center my-3">
-            <span class="btn btn-danger mx-auto" id="leaveMatchButton">Leave Game</span>
+            <span class="btn btn-danger mx-auto" data-bs-toggle="modal" data-bs-target="#resignModal" id="resignButton">Resign</span>
+            <span class="btn btn-primary mx-auto d-none" data-bs-toggle="modal" data-bs-target="#rematchModal" id="rematchButton">Rematch</span>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-2">
         <div class="text-center">
-            <h1 class="display-4 text-primary">Message</h1>
-            <p>Message your opponent in real time</p>
+            <h6>Message</h6>
         </div>
-        <div class="row mx-2">
-            <div class="col">
-                <input class="form-control" type="text" id="messageInput" placeholder="Message" />
+        <div class="container-fluid overflow-auto border border-primary rounded" id="messagesContainer">
+            <div class="row mx-2">
+                <div class="col pt-1">
+                    <input class="form-control" type="text" id="messageInput"/>
+                </div>
             </div>
-            <div class="col-md-2 col-sm-4">
-                <input class="btn btn-primary" type="button" id="sendButton" value="Send" />
+            <div class="row">
+                <div class="col-6">
+                    <ul id="messagesList"></ul>
+                </div>
             </div>
         </div>
-        <div class="row">&nbsp;</div>
-        <div class="row">
-        </div>
-        <div class="row">
-            <div class="col-6">
-                <ul id="messagesList"></ul>
+    </div>
+</div>
+
+
+<!-- SECTION: Modals -->
+<!-- Game Over Modal -->
+<div class="modal fade" id="gameOverModal" tabindex="-1" role="dialog" aria-labelledby="gameOverModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title mx-auto" id="gameOverModalHeader"></h4>
             </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resign Confirmation Modal -->
+<div class="modal fade" id="resignModal" tabindex="-1" role="dialog" aria-labelledby="resignModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title mx-auto" id="resignModalHeader">Are you sure you want to resign?</h4>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">No</button>
+                <input type="submit" id="resignConfirmation" class="btn btn-danger" value="Yes" data-bs-dismiss="modal"/>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rematch Confirmation Modal -->
+<div class="modal fade" id="rematchModal" tabindex="-1" role="dialog" aria-labelledby="rematchModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title mx-auto" id="rematchModalHeader">Submit Rematch Request?</h5>
+            </div>
+            <form asp-controller="Game" asp-action="Play" method="post">
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">No</button>
+
+                    <input type="hidden" id="rematchInput" name="opponentUserName">
+                    <input type="submit" class="btn btn-primary" value="Yes" data-bs-dismiss="modal"  />
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -53,13 +115,8 @@
 
         /* SECTION: signalr connection for instant messaging */
 
-        //Disable the send button until connection is established.
-        document.getElementById("sendButton").disabled = true;
-
         // Start the connection - runs on page load
         connection.start().then(function () {
-            document.getElementById("sendButton").disabled = false;
-
             // Only run the CreateGroup() function if this is the invite sender's page
             if ('@(ViewBag.opponentUserName)' != ''){
                 connection.invoke("CreateGroup", '@(ViewBag.opponentUserName)').catch(function (err) {
@@ -75,7 +132,7 @@
             return console.error(err.toString());
         });
 
-
+        // Receive Message
         connection.on("ReceiveMessage", function (sender, message) {
             var li = document.createElement("li");
             document.getElementById("messagesList").appendChild(li);
@@ -86,29 +143,58 @@
         });
 
         // Send Message Button
-        document.getElementById("sendButton").addEventListener("click", function (event) {
-            var message = document.getElementById("messageInput").value;;
-            connection.invoke("SendMessage", message).catch(function (err) {
+        document.getElementById("messageInput").addEventListener("keyup", function (event) {
+            // 13 = 'enter' on the keyboard
+            if (event.keyCode === 13) {
+                var message = document.getElementById("messageInput").value;
+                connection.invoke("SendMessage", message).catch(function (err) {
+                    return console.error(err.toString());
+                });
+                event.preventDefault();
+
+                // Clear input value upon sending
+                document.getElementById("messageInput").value = ''
+            }
+        });
+
+        // Resign Button
+        document.getElementById("resignConfirmation").addEventListener("click", function (event) {
+            connection.invoke("LeaveGame", '@(UserManager.GetUserName(User))', game.pgn()).catch(function (err) {
                 return console.error(err.toString());
             });
             event.preventDefault();
-
-            // Clear input value upon sending
-            document.getElementById("messageInput").value = ''
         });
 
-        // Leave Match Button
-        document.getElementById("leaveMatchButton").addEventListener("click", function (event) {
-            connection.invoke("RemoveFromGroup").catch(function (err) {
-                return console.error(err.toString());
-            });
-            event.preventDefault();
+        // Open Game Over modal
+        connection.on("MatchLeft", function (leaverUserName){
+            if ('@(UserManager.GetUserName(User))' === leaverUserName) {
+                document.getElementById("gameOverModalHeader").innerText = "You lose";
+                document.getElementById("gameOverModalHeader").classList.add("text-danger");
+                document.getElementById("gameOverModal").classList.add("bg-danger");
+            }
+            else{
+                document.getElementById("gameOverModalHeader").innerText = "You win";
+                document.getElementById("gameOverModalHeader").classList.add("text-success");
+                document.getElementById("gameOverModal").classList.add("bg-success");
+            }
+            $('#gameOverModal').modal('show');
+
+            // gameOver = true means pieces are no longer draggable
+            gameOver = true;
+
+            // Swap resign button with rematch button
+            document.getElementById("resignButton").classList.add("d-none");
+            document.getElementById("rematchButton").classList.remove("d-none");
+
+            // Populate input value of rematch button with opponent's username
+            document.getElementById("rematchInput").value = opponentUserName;
         });
 
-        // Go back to home page
-        connection.on("MatchLeft", function (){
-            window.location.href = '@(Url.Action("Index", "Home"))';
+        // Receiving invite for a rematch should refresh the page
+        connection.on("ReceiveInvite", function () {
+            window.location.href = '@(Url.Action("Play", "Game"))';
         });
+
 
         /* SECTION: signalr connection for chess game communication */
 
@@ -152,7 +238,10 @@
 
         var whiteUserName = '';
         var blackUserName = '';
-        var boardOrientation = '';
+        var opponentUserName = '';
+        var playerUserName = '';
+
+        var gameOver = false;
 
         var config = {
             draggable: true,
@@ -160,20 +249,42 @@
             onDragStart: onDragStart,
             onDrop: onDrop,
             onSnapEnd: onSnapEnd,
-            orientation: boardOrientation
         }
         board = Chessboard('myBoard', config)
 
-        // Setting variables at the start of the game so who is white/black is stored in memory
+        // Set chessboard size to be dynamic
+        $(window).resize(board.resize)
+        
+        // Set the height on page load
+        updateNeighbouringHeights();
+
+        // Function for ensuring that the Dashboard and Messages height always matches the Chessboard's
+        function updateNeighbouringHeights() {
+            var boardHeight = $('#myBoard').height();
+            $('#dashboardContainer').height(boardHeight);
+            $('#messagesContainer').height(boardHeight);
+        }
+
+        // General function for orienting the page once a game starts
         connection.on("GameStart", function (BlackUserName, WhiteUserName) {
+            // Setting variables at the start of the game so who is white/black is stored in memory
             whiteUserName = WhiteUserName;
             blackUserName = BlackUserName;
-            boardOrientation = 'black';
 
-            // Flip the orientation for player with black: (TODO: Figure out why this doesn't work)
-            //if ('@(UserManager.GetUserName(User))' === blackUserName){
-            //    boardOrientation = 'black'
-            //}
+            // Flip the orientation for player with black and set global user variables
+            if ('@(UserManager.GetUserName(User))' === blackUserName){
+                board.orientation('black');
+                opponentUserName = whiteUserName;
+                playerUserName = blackUserName;
+            }
+            else
+            {
+                opponentUserName = blackUserName;
+                playerUserName = whiteUserName;
+            }
+
+            document.getElementById("opponentUserName").innerText = opponentUserName;
+            document.getElementById("playerUserName").innerText = playerUserName;
         });
 
         // Fires when a piece is picked up. The drag action is prevented if the function returns false
@@ -191,20 +302,27 @@
         }
 
         function onDrop(source, target) {
-            // see if the move is legal
-            var move = game.move({
-                from: source,
-                to: target,
-                promotion: 'q' // NOTE: always promote to a queen for example simplicity
-            })
+            if (!gameOver)
+            {
+                // see if the move is legal
+                var move = game.move({
+                    from: source,
+                    to: target,
+                    promotion: 'q' // NOTE: always promote to a queen for example simplicity
+                })
 
-            // illegal move
-            if (move === null) return 'snapback'
+                // illegal move
+                if (move === null) return 'snapback'
 
-            updateStatus()
-            // Send move to opponent's board
-            //var moveString = source + '-' + target
-            sendMove(source, target)
+                updateStatus()
+                // Send move to opponent's board
+                //var moveString = source + '-' + target
+                sendMove(source, target)
+            }
+            else
+            {
+                return 'snapback'
+            }
         }
 
         // update the board position after the piece snap
@@ -213,6 +331,7 @@
             board.position(game.fen())
         }
 
+        // General function for keeping track of the status of the game. Currenly not utilized, but can be very useful for position tracking, etc
         function updateStatus() {
             var status = ''
 
@@ -266,15 +385,23 @@
 
         updateStatus()
 
-        // Before unload handling:
+        // Update the Dashboard and Messages heights to match the chessboard height when the window is resized
+        $(window).resize(function () {
+            updateNeighbouringHeights();
+        });
+
+        // Before unload handling when game is on:
         window.addEventListener('beforeunload', function (e) {
-            e.preventDefault();
-            e.returnValue = '';
+            if (!gameOver)
+            {
+                e.preventDefault();
+                e.returnValue = '';
+            }
         });
 
         // Remove both user's from game when one player unloads the page
         window.addEventListener('unload', function (e) {
-            connection.invoke("RemoveFromGroup").catch(function (err) {
+            connection.invoke("LeaveGame", '@(UserManager.GetUserName(User))', game.pgn()).catch(function (err) {
                 return console.error(err.toString());
             });
             e.preventDefault();

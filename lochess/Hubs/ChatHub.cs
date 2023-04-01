@@ -92,16 +92,20 @@ namespace lochess.Hubs
                 string blackUserName;
 
                 // Let the invitation sender be white if a random number is even
-                if (random.Next() % 2 == 0)
+                if (random.Next(0, 3) % 2 == 0)
                 {
                     whiteUserName = sender.UserName;
                     blackUserName = opponent.UserName;
                 }
                 else
                 {
-                    whiteUserName = sender.UserName;
-                    blackUserName = opponent.UserName;
+                    whiteUserName = opponent.UserName;
+                    blackUserName = sender.UserName;
                 }
+
+                // Set the initial JS variables  
+                await Clients.Group(groupName).SendAsync("GameStart", blackUserName, whiteUserName);
+
                 // Create the Game record, and assign white vs. black
                 context.Games.Add(new Game
                 {
@@ -109,9 +113,6 @@ namespace lochess.Hubs
                     BlackUserName = blackUserName,
                     GameActive = true
                 });
-
-                // Set the initial JS variables  
-                await Clients.Group(groupName).SendAsync("GameStart", blackUserName, whiteUserName);
 
                 context.SaveChanges();
 
@@ -144,11 +145,11 @@ namespace lochess.Hubs
         }
 
         // Function for deleting the group that exists between the leaver and the opponent.
-        // Called when the 'Leave Match' button is clicked
-        public async Task RemoveFromGroup()
+        // Called when the 'Resign' button is clicked, or someone leaves the page
+        public async Task LeaveGame(string leaverUserName, string pgn)
         {
             // Current logic for leaving groups: one person leaves a group ends the group for all the members
-            AspNetUser leaver = context.Users.Where(a => a.Id == Context.UserIdentifier).FirstOrDefault();
+            AspNetUser leaver = context.Users.Where(a => a.UserName == leaverUserName).FirstOrDefault(); //TEST THAT THIS WORKS
             // Find opponent from Group Name
             AspNetUser opponent = context.Users.Where(a => a.GroupName == leaver.GroupName && a.Id != leaver.Id).FirstOrDefault();
 
@@ -160,8 +161,8 @@ namespace lochess.Hubs
                 List<string> leaverConnectionIds = context.Connections.Where(a => a.UserAgent == leaver.UserName).Select(a => a.ConnectionId).ToList();
                 List<string> opponentConnectionIds = context.Connections.Where(a => a.UserAgent == opponent.UserName).Select(a => a.ConnectionId).ToList();
 
-                // Leave the page now that the game has been aborted/resigned
-                await Clients.Group(groupName).SendAsync("MatchLeft");
+                // Open the Game Over modal now that the game has been aborted/resigned
+                await Clients.Group(groupName).SendAsync("MatchLeft", leaver.UserName);
 
                 // Remove all connection ids of sender and opponent from the group
                 foreach (string connectionId in leaverConnectionIds)
@@ -182,9 +183,11 @@ namespace lochess.Hubs
                 if (game != null)
                 {
                     game.GameActive = false;
-                    game.Result = "draw";
+                    game.Result = opponent.UserName;
+                    game.Pgn = pgn;
                 }
 
+                // Save changes to Connections and Games tables
                 context.SaveChanges();
             }
         }
